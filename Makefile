@@ -86,6 +86,9 @@ firmware-tbeam_sx1262: check_bt_buffers
 firmware-techo:
 	arduino-cli compile --fqbn adafruit:nrf52:pca10056 $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x44\""
 
+firmware-xiao_nrf:
+	arduino-cli compile --fqbn Seeeduino:nrf52:xiaonRF52840 $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x53\" \"-DBOARD_VARIANT=0x19\""
+
 firmware-t3s3:
 	arduino-cli compile --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc" $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x42\" \"-DBOARD_VARIANT=0xAB\""
 
@@ -278,6 +281,11 @@ upload-techo:
 	@sleep 6
 	rnodeconf /dev/ttyACM0 --firmware-hash $$(./partition_hashes from_device /dev/ttyACM0)
 
+upload-xiao_nrf:
+	arduino-cli upload -p $(or $(port), /dev/ttyACM0) --fqbn Seeeduino:nrf52:xiaonRF52840
+	@sleep 6
+	rnodeconf $(or $(port), /dev/ttyACM0) --firmware-hash $$(./partition_hashes from_device $(or $(port), /dev/ttyACM0))
+
 release:  console-site spiffs-image $(shell grep ^release- Makefile | cut -d: -f1)
 
 release-hashes:
@@ -429,6 +437,12 @@ release-techo:
 	arduino-cli compile --fqbn adafruit:nrf52:pca10056 $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x44\""
 	cp build/adafruit.nrf52.pca10056/RNode_Firmware_CE.ino.hex build/rnode_firmware_techo.hex
 	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application build/rnode_firmware_techo.hex Release/rnode_firmware_techo.zip
+	rm -r build
+
+release-xiao_nrf:
+	arduino-cli compile --fqbn Seeeduino:nrf52:xiaonRF52840 $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x53\" \"-DBOARD_VARIANT=0x19\""
+	cp build/Seeeduino.nrf52.xiaonRF52840/RNode_Firmware_CE.ino.hex build/rnode_firmware_xiao_nrf.hex
+	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application build/rnode_firmware_xiao_nrf.hex Release/rnode_firmware_xiao_nrf.zip
 	rm -r build
 
 release-t3s3:
