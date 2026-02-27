@@ -438,6 +438,12 @@ int sx126x::beginPacket(int implicitHeader)
 int sx126x::endPacket()
 {
     setPacketParams(_preambleLength, _implicitHeaderMode, _payloadLength, _crcMode);
+    // RXEN on E22 module back to low
+    #if BOARD_MODEL == BOARD_LILKA_V2
+    if (_rxen != -1) {
+      digitalWrite(_rxen, LOW);
+    }
+    #endif
 
     // put in single TX mode
     uint8_t timeout[3] = {0};
@@ -712,6 +718,8 @@ void sx126x::enableTCXO() {
     #elif BOARD_MODEL == BOARD_HELTEC_T114
       uint8_t buf[4] = {MODE_TCXO_1_8V_6X, 0x00, 0x00, 0xFF};
     #elif BOARD_MODEL == BOARD_E22_ESP32
+      uint8_t buf[4] = {MODE_TCXO_1_8V_6X, 0x00, 0x00, 0xFF};
+    #elif BOARD_MODEL == BOARD_LILKA_V2
       uint8_t buf[4] = {MODE_TCXO_1_8V_6X, 0x00, 0x00, 0xFF};
     #else
       uint8_t buf[4] = {0};

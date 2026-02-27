@@ -131,12 +131,17 @@
   #define MODEL_FE            0xFE // Homebrew board, max 17dBm output power
   #define MODEL_FF            0xFF // Homebrew board, max 14dBm output power
 
+  #define PRODUCT_LILKA       0x60
+  #define BOARD_LILKA_V2      0x61 
+  #define MODEL_62            0x62 // board LILKA_V2_3(ESP32S3) with E22-400M22S(SX1262) module 433 MHz 
+
   // Displays
   #define OLED 0x01
   #define EINK_BW 0x02
   #define EINK_3C 0x03
   #define MONO_OLED 0x04
   #define TFT 0x05
+  #define ADAFRUIT_TFT 0x06
 
   #if defined(ESP32)
     #define PLATFORM PLATFORM_ESP32
@@ -1103,6 +1108,79 @@
           const int pin_led_rx = 48;
           const int pin_led_tx = 48; //47;
         #endif
+      #endif
+    // board lilka with E22-400M22S(SX1262)
+    #elif BOARD_MODEL == BOARD_LILKA_V2
+      #define IS_ESP32S3 true
+      #define HAS_DISPLAY true
+      #define DISPLAY ADAFRUIT_TFT
+      #define DISPLAY_SCALE_OVERRIDE true
+      #define DISPLAY_SCALE 2
+      #define HAS_BLUETOOTH false
+      #define HAS_BLE true
+      #define HAS_PMU true
+      #define HAS_CONSOLE true
+      #define HAS_NP false
+      #define HAS_SD false
+      #define HAS_EEPROM true
+      
+      #define HAS_INPUT true
+      #define HAS_SLEEP false
+      //#define PIN_WAKEUP GPIO_NUM_0
+      //#define WAKEUP_LEVEL 0
+
+      #define INTERFACE_COUNT 1
+      const int pin_btn_usr1 = 5;
+
+      // const int SD_MISO = 8;
+      // const int SD_MOSI = 17;
+      // const int SD_CLK = 18;
+      // const int SD_CS = 16;
+
+
+      const int DISPLAY_DC = 15;
+      const int DISPLAY_CS = 7;
+      const int DISPLAY_MISO = 8;
+      const int DISPLAY_MOSI = 17;
+      const int DISPLAY_CLK = 18;
+      const int DISPLAY_BL_PIN = 46;
+
+      #define HAS_NP false
+      //const int pin_np = 21;
+      #if HAS_NP == false
+        #if defined(EXTERNAL_LEDS)
+          const int pin_led_rx = 4;
+          const int pin_led_tx = 4;
+        #else
+          const int pin_led_rx = 4;
+          const int pin_led_tx = 4;
+        #endif
+      #endif
+      #if BOARD_VARIANT == MODEL_62
+      const uint8_t interfaces[INTERFACE_COUNT] = {SX1262};
+      const bool interface_cfg[INTERFACE_COUNT][3] = {
+          // SX1262
+          {
+              false, // DEFAULT_SPI
+              true,  // HAS_TCXO
+              true   // DIO2_AS_RF_SWITCH
+          },
+      };
+      const int8_t interface_pins[INTERFACE_COUNT][10] = {
+          // SX1262
+          {
+              13, // pin_ss
+              14,  // pin_sclk
+              21, // pin_mosi
+              47, // pin_miso
+              43, // pin_busy
+              44, // pin_dio
+              48, // pin_reset
+              -1, // pin_txen
+              12, // pin_rxen
+              -1  // pin_tcxo_enable
+          }
+      };
       #endif
     #else
       #error An unsupported ESP32 board was selected. Cannot compile RNode firmware.

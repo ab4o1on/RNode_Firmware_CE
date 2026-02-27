@@ -135,6 +135,10 @@ void busyCallback(const void* p) { display_callback(); }
   #define SCL_OLED 6
   #define SDA_OLED 5
   #define DISP_CUSTOM_ADDR true
+#elif BOARD_MODEL == BOARD_LILKA_V2
+  #define DISP_W 280
+  #define DISP_H 240
+  #define DISP_ADDR -1
 #else
   #define DISP_RST -1
   #define DISP_ADDR 0x3C
@@ -174,6 +178,8 @@ uint32_t last_epd_full_refresh = 0;
     Adafruit_SH1106G display = Adafruit_SH1106G(DISP_W, DISP_H, &Wire, -1);
   #elif BOARD_MODEL == BOARD_HELTEC_T114
     ST7789Spi display(&SPI1, DISPLAY_RST, DISPLAY_DC, DISPLAY_CS);
+  #elif BOARD_MODEL == BOARD_LILKA_V2
+    Adafruit_ST7789 display = Adafruit_ST7789(DISPLAY_CS, DISPLAY_DC, DISPLAY_MOSI, DISPLAY_CLK, -1);
   #endif
   float disp_target_fps = 7;
   #define SCREENSAVER_TIME 500 // ms
@@ -245,6 +251,18 @@ void update_area_positions() {
       p_as_x = 126;
       p_as_y = p_ad_y;
     }
+  #elif BOARD_MODEL == BOARD_LILKA_V2
+    if (disp_mode == DISP_MODE_PORTRAIT) {
+      p_ad_x = 0 * DISPLAY_SCALE;
+      p_ad_y = 0 * DISPLAY_SCALE;
+      p_as_x = 0 * DISPLAY_SCALE;
+      p_as_y = 64 * DISPLAY_SCALE;
+    } else if (disp_mode == DISP_MODE_LANDSCAPE) {
+      p_ad_x = 10 + DISPLAY_SCALE;
+      p_ad_y = 60 + DISPLAY_SCALE;
+      p_as_x = 10 + 128;
+      p_as_y = p_ad_y;
+    }
   #elif BOARD_MODEL == BOARD_TECHO
     if (disp_mode == DISP_MODE_PORTRAIT) {
       p_ad_x = 61;
@@ -283,7 +301,7 @@ uint8_t display_contrast = 0x00;
     if (value == 0) { analogWrite(pin_backlight, 0); }
     else            { analogWrite(pin_backlight, value); }
   }
-#elif BOARD_MODEL == BOARD_TDECK
+#elif BOARD_MODEL == BOARD_TDECK || BOARD_MODEL == BOARD_LILKA_V2
   void set_contrast(Adafruit_ST7789 *display, uint8_t value) {
     static uint8_t level = 0;
     static uint8_t steps = 16;
@@ -426,6 +444,10 @@ bool display_init() {
     #elif BOARD_MODEL == BOARD_TDECK
     display.init(240, 320);
     display.setSPISpeed(80e6);
+    #elif BOARD_MODEL == BOARD_LILKA_V2
+    display.init(DISP_H, DISP_W);
+    display.setSPISpeed(80e6);
+    if (false) {
     #elif BOARD_MODEL == BOARD_HELTEC_T114
     display.init();
     // set white as default pixel colour for Heltec T114
@@ -490,6 +512,9 @@ bool display_init() {
           #elif BOARD_MODEL == BOARD_TDECK
             disp_mode = DISP_MODE_PORTRAIT;
             display.setRotation(3);
+          #elif BOARD_MODEL == BOARD_LILKA_V2
+            disp_mode = DISP_MODE_LANDSCAPE;
+            display.setRotation(1);
           #else
             disp_mode = DISP_MODE_PORTRAIT;
             display.setRotation(3);
@@ -524,7 +549,7 @@ bool display_init() {
         #endif
       #endif
 
-      #if BOARD_MODEL == BOARD_TDECK
+      #if BOARD_MODEL == BOARD_TDECK || BOARD_LILKA_V2
         display.fillScreen(DISPLAY_BLACK);
       #endif
 
@@ -873,7 +898,9 @@ void update_stat_area() {
       drawBitmap(p_as_x, p_as_y, stat_area.getBuffer(), stat_area.width(), stat_area.height(), DISPLAY_WHITE, DISPLAY_BLACK);
     } else if (disp_mode == DISP_MODE_LANDSCAPE) {
       drawBitmap(p_as_x+2, p_as_y, stat_area.getBuffer(), stat_area.width(), stat_area.height(), DISPLAY_WHITE, DISPLAY_BLACK);
+      #if BOARD_MODEL != BOARD_LILKA_V2
       if (device_init_done && !disp_ext_fb) drawLine(p_as_x, 0, p_as_x, DISP_W/2, DISPLAY_WHITE);
+      #endif
     }
 
   } else {
@@ -881,9 +908,11 @@ void update_stat_area() {
       drawBitmap(p_as_x, p_as_y, bm_updating, stat_area.width(), stat_area.height(), DISPLAY_BLACK, DISPLAY_WHITE);
     } else if (console_active && device_init_done) {
       drawBitmap(p_as_x, p_as_y, bm_console, stat_area.width(), stat_area.height(), DISPLAY_BLACK, DISPLAY_WHITE);
+      #if BOARD_MODEL != BOARD_LILKA_V2
       if (disp_mode == DISP_MODE_LANDSCAPE) {
         drawLine(p_as_x, 0, p_as_x, DISP_W/2, DISPLAY_WHITE);
       }
+      #endif
     }
   }
 }
@@ -1045,8 +1074,10 @@ void draw_disp_area() {
               disp_area.drawBitmap(dxp, 37+16, bm_n_uh+bm_offset, 8, 5, DISPLAY_WHITE, DISPLAY_BLACK);
             }
             free(v_str);
+            #if BOARD_MODEL != BOARD_LILKA_V2
             disp_area.drawLine(27, 37+19, 28, 37+19, DISPLAY_BLACK);
             disp_area.drawLine(27, 37+20, 28, 37+20, DISPLAY_BLACK);
+            #endif
           }
         }
       }
@@ -1060,11 +1091,13 @@ void update_disp_area() {
   draw_disp_area();
 
   drawBitmap(p_ad_x, p_ad_y, disp_area.getBuffer(), disp_area.width(), disp_area.height(), DISPLAY_WHITE, DISPLAY_BLACK);
+  #if BOARD_MODEL != BOARD_LILKA_V2
   if (disp_mode == DISP_MODE_LANDSCAPE) {
     if (device_init_done && !firmware_update_mode && !disp_ext_fb) {
-      drawLine(0, 0, 0, 63, DISPLAY_WHITE);
+      drawLine(0, 0, 0, DISP_H, DISPLAY_WHITE);
     }
   }
+  #endif
 }
 
 void display_recondition() {
@@ -1137,7 +1170,7 @@ void update_display(bool blank = false) {
       #if BOARD_MODEL == BOARD_HELTEC_T114
         display.clear();
         display.display();
-      #elif BOARD_MODEL != BOARD_TDECK && DISPLAY != EINK_3C && DISPLAY != EINK_BW
+      #elif BOARD_MODEL != BOARD_TDECK && DISPLAY != EINK_3C && DISPLAY != EINK_BW && BOARD_MODEL != BOARD_LILKA_V2
         display.clearDisplay();
         display.display();
       #else
@@ -1157,7 +1190,7 @@ void update_display(bool blank = false) {
 
       #if BOARD_MODEL == BOARD_HELTEC_T114
         display.clear();
-      #elif BOARD_MODEL != BOARD_TDECK && DISPLAY != EINK_3C && DISPLAY != EINK_BW
+      #elif BOARD_MODEL != BOARD_TDECK && DISPLAY != EINK_3C && DISPLAY != EINK_BW && BOARD_MODEL != BOARD_LILKA_V2
         display.clearDisplay();
       #endif
 
@@ -1182,7 +1215,7 @@ void update_display(bool blank = false) {
           last_epd_refresh = millis();
           epd_blanked = false;
         }
-      #elif BOARD_MODEL != BOARD_TDECK
+      #elif BOARD_MODEL != BOARD_TDECK && BOARD_MODEL != BOARD_LILKA_V2
         display.display();
       #endif
 

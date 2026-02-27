@@ -158,6 +158,10 @@ firmware-heltec_t114:
 firmware-heltec_t114_gps:
 	arduino-cli compile --log --fqbn Heltec_nRF52:Heltec_nRF52:HT-n5262 -e --build-property "build.partitions=no_ota" --build-property "upload.maximum_size=2097152" --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x3C\" \"-DBOARD_VARIANT=0xCB\""
 
+# Added board lilka with E22-400M22S(SX1262)
+firmware-lilka_v2_e22:
+	arduino-cli compile --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc" $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x61\" \"-DBOARD_VARIANT=0x62\""
+
 upload-tbeam:
 	arduino-cli upload -p $(or $(port), /dev/ttyACM0) --fqbn esp32:esp32:t-beam
 	@sleep 1
@@ -277,6 +281,14 @@ upload-techo:
 	arduino-cli upload -p /dev/ttyACM0 --fqbn adafruit:nrf52:pca10056
 	@sleep 6
 	rnodeconf /dev/ttyACM0 --firmware-hash $$(./partition_hashes from_device /dev/ttyACM0)
+
+# Added board lilka with E22-400M22S(SX1262)
+upload-lilka_v2_e22:
+	arduino-cli upload -p $(or $(port), /dev/ttyACM0) --fqbn esp32:esp32:esp32s3
+	@sleep 1
+	rnodeconf $(or $(port), /dev/ttyACM0) --firmware-hash $$(./partition_hashes ./build/esp32.esp32.esp32s3/RNode_Firmware_CE.ino.bin)
+	@sleep 3
+	python ./Release/esptool/esptool.py --port $(or $(port), /dev/ttyACM0) --chip esp32-s3 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x210000  ./Release/console_image.bin
 
 release:  console-site spiffs-image $(shell grep ^release- Makefile | cut -d: -f1)
 
@@ -527,4 +539,14 @@ release-heltec_t114:
 	arduino-cli compile --fqbn Heltec_nRF52:Heltec_nRF52:HT-n5262 $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x3C\""
 	cp build/Heltec_nRF52.Heltec_nRF52.HT-n5262/RNode_Firmware_CE.ino.hex build/rnode_firmware_heltec_t114.hex
 	adafruit-nrfutil dfu genpkg --dev-type 0x0052 --application build/rnode_firmware_heltec_t114.hex Release/rnode_firmware_heltec_t114.zip
+	rm -r build
+
+# Added board lilka with E22-400M22S(SX1262)
+release-lilka_v2_e22:
+	arduino-cli compile --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc" $(COMMON_BUILD_FLAGS) --build-property "compiler.cpp.extra_flags=\"-DBOARD_MODEL=0x61\" \"-DBOARD_VARIANT=0x62\""
+	cp ~/.arduino15/packages/esp32/hardware/esp32/$(ARDUINO_ESP_CORE_VER)/tools/partitions/boot_app0.bin build/rnode_firmware_lilka_v2_e22.boot_app0
+	cp build/esp32.esp32.esp32s3/RNode_Firmware_CE.ino.bin build/rnode_firmware_lilka_v2_e22.bin
+	cp build/esp32.esp32.esp32s3/RNode_Firmware_CE.ino.bootloader.bin build/rnode_firmware_lilka_v2_e22.bootloader
+	cp build/esp32.esp32.esp32s3/RNode_Firmware_CE.ino.partitions.bin build/rnode_firmware_lilka_v2_e22.partitions
+	zip --junk-paths ./Release/rnode_firmware_lilka_v2_e22.zip ./Release/esptool/esptool.py ./Release/console_image.bin build/rnode_firmware_lilka_v2_e22.boot_app0 build/rnode_firmware_lilka_v2_e22.bin build/rnode_firmware_lilka_v2_e22.bootloader build/rnode_firmware_lilka_v2_e22.partitions
 	rm -r build
