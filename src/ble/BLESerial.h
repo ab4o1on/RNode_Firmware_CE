@@ -69,7 +69,7 @@ public:
 };
 
 #define RX_BUFFER_SIZE 6144
-#define BLE_BUFFER_SIZE 512 // Must fit in max GATT attribute length
+#define BLE_BUFFER_SIZE 256 // Must fit in max GATT attribute length
 #define MIN_MTU 50
 
 class BLESerial : public BLECharacteristicCallbacks, public BLEServerCallbacks, public BLESecurityCallbacks, public Stream {
