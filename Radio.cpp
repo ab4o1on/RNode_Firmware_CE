@@ -439,6 +439,11 @@ int sx126x::endPacket()
 {
     setPacketParams(_preambleLength, _implicitHeaderMode, _payloadLength, _crcMode);
 
+    #if BOARD_MODEL == BOARD_E22_ESP32
+    if (_rxen != -1) {
+      digitalWrite(_rxen, LOW);
+    }
+    #endif
     // put in single TX mode
     uint8_t timeout[3] = {0};
     executeOpcode(OP_TX_6X, timeout, 3);

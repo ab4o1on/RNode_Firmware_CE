@@ -996,17 +996,15 @@
       #endif
 
     #elif BOARD_MODEL == BOARD_E22_ESP32
-      #define HAS_DISPLAY true
-      #define DISPLAY OLED
+      #define OCP_TUNED 0x38
+      #define HAS_DISPLAY false
+      
+      //#define DISPLAY OLED
       // currently there is only support for using one Bluetooth type,
       // Bluetooth has been chosen over BLE as it is less experimental
       #define HAS_BLUETOOTH true
-      //#define HAS_BLE true 
       #define HAS_CONSOLE true
-      #define HAS_SD false
       #define HAS_EEPROM true
-      #define I2C_SDA 21
-      #define I2C_SCL 22
       #define INTERFACE_COUNT 1
       const int pin_led_rx = 2;
       const int pin_led_tx = 4;
@@ -1023,13 +1021,13 @@
       const int8_t interface_pins[INTERFACE_COUNT][10] = { 
                   // SX1262
           {
-              18, // pin_ss
-              5, // pin_sclk
-              27, // pin_mosi
+              5, // pin_ss
+              18, // pin_sclk
+              23, // pin_mosi
               19, // pin_miso
               32, // pin_busy
               33, // pin_dio
-              23, // pin_reset
+              27, // pin_reset
               -1, // pin_txen
               14, // pin_rxen
               -1  // pin_tcxo_enable
